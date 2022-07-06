@@ -63,6 +63,11 @@
     ~~~sh
     podman run --rm -it --user 1024 --entrypoint /bin/bash --name reversewords-test quay.io/mavazque/reversewords:ubi8 
     grep Cap /proc/1/status
+    CapInh:	0000000000000000
+    CapPrm:	0000000000000000
+    CapEff:	0000000000000000
+    CapBnd:	00000000800405fb
+    CapAmb:	0000000000000000
     ~~~
 5. We can see thread's permitted and effective capability sets cleared, we can exit our container now:
 
