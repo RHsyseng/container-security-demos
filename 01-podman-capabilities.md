@@ -37,7 +37,7 @@
 
     ~~~sh
     podman run --rm -it --user 0 --entrypoint /bin/bash --name reversewords-test quay.io/mavazque/reversewords:ubi8
-    grep Cap /proc/1/status
+    # grep Cap /proc/1/status
     ~~~
 2. We can see thread's permitted, effective and bound capability sets populated:
 
@@ -56,13 +56,13 @@
 3. Exit the container:
 
     ~~~sh
-    exit
+    $ exit
     ~~~
 4. Same test but running the container with a nonroot UID:
 
     ~~~sh
     podman run --rm -it --user 1024 --entrypoint /bin/bash --name reversewords-test quay.io/mavazque/reversewords:ubi8 
-    grep Cap /proc/1/status
+    $ grep Cap /proc/1/status
     CapInh:	0000000000000000
     CapPrm:	0000000000000000
     CapEff:	0000000000000000
@@ -78,13 +78,26 @@
 
     ~~~sh
     podman run --rm -it --user 1024 --cap-add=cap_net_bind_service --entrypoint /bin/bash --name reversewords-test quay.io/mavazque/reversewords:ubi8
-    grep Cap /proc/1/status
+    $ grep Cap /proc/1/status
     ~~~
 7. Since Podman supports ambient capabilities, you can see how we got the NET_BIND_SERVICE cap into the ambient, permitted and effective sets.
-8. We can exit the container now:
 
     ~~~sh
-    exit
+    CapInh:	0000000000000400
+    CapPrm:	0000000000000400
+    CapEff:	0000000000000400
+    CapBnd:	00000000800405fb
+    CapAmb:	0000000000000400
+    ~~~
+    ~~~sh
+    $ capsh --decode=0000000000000400
+    0x0000000000000400=cap_net_bind_service
+    ~~~
+
+9. We can exit the container now:
+
+    ~~~sh
+    $ exit
     ~~~
 
 ## Demo 3 - Real world scenario
@@ -99,13 +112,17 @@
 2. Stop the container with Ctrl+C and try to bind to port 80 this time:
 
     ~~~sh
-    podman run --rm --user 1024 -e APP_PORT=80 --name reversewords-test quay.io/mavazque/reversewords:ubi8
+    podman run --rm --user 1024 -e APP_PORT=80 --name reversewords-test quay.io/mavazque/reversewords:ubi82022/07/06 14:28:52 Starting Reverse Api    v       v0.0.21 Release: NotSet
+    2022/07/06 14:28:52 Listening on port 80
+    2022/07/06 14:28:52 listen tcp :80: bind: permission denied   
     ~~~
 3. This time it fails, remember that since we're running as nonroot, permitted and effective capability sets were cleared (so NET_BIND_SERVICE present on podman's default cap set is not available).
 4. We know that the capability NET_BIND_SERVICE allows unprivileged processes to bind to ports under 1024, let’s assign this capability to the container and see what happens:
 
     ~~~sh
     podman run --rm --user 1024 -e APP_PORT=80 --cap-add=cap_net_bind_service --name reversewords-test quay.io/mavazque/reversewords:ubi8
+    2022/07/06 14:29:30 Starting Reverse Api v0.0.21 Release: NotSet
+    2022/07/06 14:29:30 Listening on port 80
     ~~~
 5. This time it worked because the NET_BIND_SERVICE cap was added to the ambient, permitted and effective sets.
 6. You can stop the container using Ctrl+C.
@@ -129,16 +146,21 @@
     ~~~sh
     grep Cap /proc/1/status 
     ~~~
-5. As you can see, the effective and permitted sets are cleared. But the inheritable and bounding do have the NET_BIND_SERVICE.
+5. As you can see, the effective and permitted sets are cleared. Only the bounding capability set has NET_BIND_SERVICE.
 6. Let's run our app:
 
     ~~~sh
     /usr/bin/reverse-words &
     ~~~
-7. We were able to bind to port 80, the binary had the file capability required to do that and it was present on the inheritable and bounding sets, to the thread adquired the capability on its effective set. We can check the effective and permitted sets:
+7. We were able to bind to port 80, the binary had the file capabilities (effective and permitted) required to do that and it was present on the bounding set. Then the thread acquired the capability on its effective and permitted sets. We can check the effective and permitted sets:
 
     ~~~sh
-    grep Cap /proc/<app_pid>/status
+    $ grep Cap /proc/$!/status
+    CapInh:	0000000000000000
+    CapPrm:	0000000000000400
+    CapEff:	0000000000000400
+    CapBnd:	00000000800405fb
+    CapAmb:	0000000000000000
     ~~~
 9. We can exit the container now.
 
@@ -153,14 +175,20 @@
 10. Check the cointainer thread capabilities:
 
     ~~~sh
-    grep Cap /proc/1/status
+    $ grep Cap /proc/1/status
+    CapInh:	0000000000000000
+    CapPrm:	0000000000000000
+    CapEff:	0000000000000000
+    CapBnd:	0000000000000000
+    CapAmb:	0000000000000000
     ~~~
 11. All sets are zeroed, let's try to run our app:
 
     ~~~sh
     /usr/bin/reverse-words
+    bash: /usr/bin/reverse-words: Operation not permitted
     ~~~
-12. The kernel blocked the execution, since NET_BIND_SERVICE capability cannot be acquired.
+12. The kernel blocked the execution, since NET_BIND_SERVICE capability cannot be acquired since the capability requested was not in the bounding set.
 13. That answers the question, NO. Now we can exit the container:
 
     ~~~sh
