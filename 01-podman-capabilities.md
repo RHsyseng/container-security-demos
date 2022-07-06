@@ -39,7 +39,16 @@
     podman run --rm -it --user 0 --entrypoint /bin/bash --name reversewords-test quay.io/mavazque/reversewords:ubi8
     grep Cap /proc/1/status
     ~~~
-2. We can see thread's permitted and effective capability sets populated, let's decode them:
+2. We can see thread's permitted, effective and bound capability sets populated:
+
+    ~~~sh
+    CapInh:	0000000000000000
+    CapPrm:	00000000800405fb
+    CapEff:	00000000800405fb
+    CapBnd:	00000000800405fb
+    CapAmb:	0000000000000000
+    ~~~
+   let's decode them:
 
     ~~~sh
     capsh --decode=00000000800405fb
