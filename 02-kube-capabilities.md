@@ -43,6 +43,25 @@
     CapBnd:	00000000000005fb
     CapAmb:	0000000000000000
     ~~~
+    ~~~sh
+    $ capsh --decode=00000000000005fb
+    0x00000000000005fb=cap_chown,cap_dac_override,cap_fowner,cap_fsetid,cap_kill,cap_setgid,cap_setuid,cap_setpcap,cap_net_bind_service
+    ~~~
+    This are the default capabilities in CRI-O 1.23 which matches the one shown previously
+    ~~~
+    default_capabilities = [
+	"CHOWN",
+	"DAC_OVERRIDE",
+	"FSETID",
+	"FOWNER",
+	"SETGID",
+	"SETUID",
+	"SETPCAP",
+	"NET_BIND_SERVICE",
+	"KILL",
+    ]
+    ~~~~
+        
 5. Now, let's run the same application pod but with a nonroot UID:
 
     ~~~sh
