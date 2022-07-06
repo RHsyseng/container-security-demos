@@ -139,14 +139,21 @@
 
     ~~~sh
     kubectl -n ${NAMESPACE} logs deployment/reversewords-app-rootuid
+    2022/07/06 15:14:51 Starting Reverse Api v0.0.21 Release: NotSet
+    2022/07/06 15:14:51 Listening on port 80
     ~~~
 3. If we look at the capability sets this is what we get:
 
     ~~~sh
     kubectl -n ${NAMESPACE} exec -ti deployment/reversewords-app-rootuid -- grep Cap /proc/1/status
+    CapInh:	0000000000000400
+    CapPrm:	0000000000000400
+    CapEff:	0000000000000400
+    CapBnd:	0000000000000400
+    CapAmb:	0000000000000000
     ~~~
-4. We have the NET_BIND_SERVICE available so it worked as expected. 
-5. Now, we are dropping all of the runtime’s default capabilities, on top of that we add the NET_BIND_SERVICE capability and request the app to run with non-root UID. In the environment variables we configure our app to listen on port 80.
+4. We have the NET_BIND_SERVICE available in the effective and permitted so it worked as expected. 
+5. Now, we are dropping all of the runtime’s default capabilities, on top of that we add the NET_BIND_SERVICE capability and request the app to run with **non-root UID**. In the environment variables we configure our app to listen on port 80.
 
     ~~~sh
     cat <<EOF | kubectl -n ${NAMESPACE} create -f -
