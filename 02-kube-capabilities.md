@@ -37,7 +37,11 @@
 4. We can see that the permitted and effective set have some capabilities, if we decode them this is what we get:
 
     ~~~sh
-    capsh --decode=00000000000005fb
+    CapInh:	00000000000005fb
+    CapPrm:	00000000000005fb
+    CapEff:	00000000000005fb
+    CapBnd:	00000000000005fb
+    CapAmb:	0000000000000000
     ~~~
 5. Now, let's run the same application pod but with a nonroot UID:
 
