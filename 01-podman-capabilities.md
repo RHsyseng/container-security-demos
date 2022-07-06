@@ -41,13 +41,13 @@
     ~~~
 2. We can see thread's permitted, effective and bound capability sets populated:
 
-    ~~~sh
+    ```sh
     CapInh:	0000000000000000
     CapPrm:	00000000800405fb
     CapEff:	00000000800405fb
     CapBnd:	00000000800405fb
     CapAmb:	0000000000000000
-    ~~~
+    ```
    let's decode them:
 
     ~~~sh
