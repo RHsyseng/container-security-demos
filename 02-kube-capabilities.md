@@ -85,6 +85,11 @@
 
     ~~~sh
     kubectl -n ${NAMESPACE} exec -ti reversewords-app-captest-nonroot -- grep Cap /proc/1/status
+    CapInh:	00000000000005fb
+    CapPrm:	0000000000000000
+    CapEff:	0000000000000000
+    CapBnd:	00000000000005fb
+    CapAmb:	0000000000000000
     ~~~
 7. The permitted and effective sets got cleared, if you remember this is expected. The problem on Kube is that it doesn't support ambient capabilities, as you can see the ambient set is cleared. That leaves us only with two options: File caps or caps aware apps.
 
