@@ -93,7 +93,7 @@
     ~~~
 7. The permitted and effective sets got cleared, if you remember this is expected. The problem on Kube is that it doesn't support ambient capabilities, as you can see the ambient set is cleared. That leaves us only with two options: File caps or caps aware apps.
 
-## Demo 2 - Application with NET_BIND_SERVICE
+## Demo 2 - Application requesting only NET_BIND_SERVICE for root and non-root user
 
 1. In this first deployment we are going to run our app with root uid and drop every runtime capability but NET_BIND_SERVICE.
 
@@ -215,19 +215,23 @@
     CapAmb:	0000000000000000
     ~~~
 8. We don't have the NET_BIND_SERVICE in the `effective` and `permitted` set, that means that in order for this to work we will need the capability to be in the ambient set, but this is not supported yet on Kubernetes, we will need to make us of file capabilities.
-9. We have an image with the file capabilities configured, let's update the deployment to use port 80 and this new image:
+
+
+## Demo 3 - File capabilities in action
+
+1. We have an image with the file capabilities configured, let's update the **previous** deployment to use port 80 and this new image:
 
     ~~~sh
     kubectl -n ${NAMESPACE} patch deployment reversewords-app-nonrootuid -p '{"spec":{"template":{"spec":{"$setElementOrder/containers":[{"name":"reversewords"}],"containers":[{"$setElementOrder/env":[{"name":"APP_PORT"}],"env":[{"name":"APP_PORT","value":"80"}],"image":"quay.io/mavazque/reversewords-captest:latest","name":"reversewords"}]}}}}'
     ~~~
-10. Let's check the logs for the app:
+2. Let's check the logs for the app:
 
     ~~~sh
     kubectl -n ${NAMESPACE} logs deployment/reversewords-app-nonrootuid
     2022/07/06 15:26:30 Starting Reverse Api v0.0.21 Release: NotSet
     2022/07/06 15:26:30 Listening on port 80
     ~~~
-11. If we check the capabilities now this is what we get:
+3. If we check the capabilities now this is what we get. Permitted and effective set have acquired the capability requested:
 
     ~~~sh
     kubectl -n ${NAMESPACE} exec -ti deployment/reversewords-app-nonrootuid -- grep Cap /proc/1/status
@@ -237,7 +241,7 @@
     CapBnd:	0000000000000400
     CapAmb:	0000000000000000
     ~~~
-12. We can check the file capabilities configured in our binary as well:
+4. We can check the file capabilities configured in our binary as well:
 
     ~~~sh
     kubectl -n ${NAMESPACE} exec -ti deployment/reversewords-app-nonrootuid -- getcap /usr/bin/reverse-words
@@ -245,3 +249,9 @@
     ~~~
 
 > ❗Notice that the same result will occur if we set the file capabilities to inherited and effective or permitted and effective. See [Transformation of capabilities during execve](https://man7.org/linux/man-pages/man7/capabilities.7.html) 
+
+5. Now, lets set the AllowPrivilegeEscalation to false in the securityContext spec of the deployment and check the status:
+
+    ~~~sh
+     kubectl -n ${NAMESPACE} patch deployment reversewords-app-nonrootuid -p '{"spec":{"template":{"spec":{"$setElementOrder/containers":   [{"name":"reversewords"}],"containers":[{"name":"reversewords","securityContext":{"allowPrivilegeEscalation":false}}]}}}}'
+    ~~~
