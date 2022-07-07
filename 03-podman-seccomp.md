@@ -101,7 +101,10 @@
     ~~~sh
     ls: /: Operation not permitted
     ~~~
-6. The required syscalls are not allowed, so it fails. Let's use the hook to append the ones we're missing:
+    
+    > ❗Notice that the default action for the profile we have created is **SCMP_ACT_ERRNO**. That means: if the syscall is not explicitly allowed then it will be denied.
+
+6. The required syscalls to list the files and directories attributes are not allowed, so it fails. Let's use the hook to append the ones we're missing:
 
     ~~~sh
     sudo podman run --rm --annotation io.containers.trace-syscall="if:/tmp/ls.json;of:/tmp/lsl.json" fedora:36 ls -l / > /dev/null
@@ -124,7 +127,7 @@
     >       "names": [
     >         "getxattr",
     >         "lgetxattr",
-    >          "lseek",
+    >         "lseek",
     >         "readlink"
     >       ]
     ~~~
