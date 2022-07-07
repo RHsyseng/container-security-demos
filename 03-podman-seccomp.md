@@ -3,7 +3,11 @@
 ## Demo 1 - Create your own seccomp profile
 
 1. We will use the [OCI Hook project](https://github.com/containers/oci-seccomp-bpf-hook) in order to generate the seccomp profile for our app
-2. Create a container with the OCI Hook which runs our application:
+
+    ~~~sh
+    $ sudo dnf install oci-seccomp-bpf-hook-tests.x86_64
+    ~~~
+3. Create a container with the OCI Hook which runs our application:
 
     ~~~sh
     sudo podman run --rm --annotation io.containers.trace-syscall="of:/tmp/ls.json" fedora:32 ls / > /dev/null
