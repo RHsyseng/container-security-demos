@@ -5,7 +5,7 @@
 1. We will use the [OCI Hook project](https://github.com/containers/oci-seccomp-bpf-hook) in order to generate the seccomp profile for our app
 
     ~~~sh
-    $ sudo dnf install oci-seccomp-bpf-hook-tests.x86_64
+    $ sudo dnf install oci-seccomp-bpf-hook.x86_64 oci-seccomp-bpf-hook-tests.x86_64
     ~~~
 3. Create a container with the OCI Hook which runs our application:
 
