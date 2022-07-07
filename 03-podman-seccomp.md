@@ -2,7 +2,7 @@
 
 ## Demo 1 - Create your own seccomp profile
 
-1. We will use the [OCI Hook project](https://github.com/containers/oci-seccomp-bpf-hook) in order to generate the seccomp profile for our app
+1. We will use the [OCI Hook project](https://github.com/containers/oci-seccomp-bpf-hook) in order to generate the seccomp profile for our app. In Fedora Linux 32+ the package is already available in the official repositories.
 
     ~~~sh
     $ sudo dnf install oci-seccomp-bpf-hook.x86_64 oci-seccomp-bpf-hook-tests.x86_64
