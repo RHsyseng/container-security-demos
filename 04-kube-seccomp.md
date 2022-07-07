@@ -18,11 +18,11 @@ Another option is using the [Security Profile Operator](https://github.com/kuber
     kubectl create ns ${NAMESPACE}
     ~~~
 3. We are going to use the ls.json seccomp profile that we obtained using the [oci-seccomp-bpf-hook](https://github.com/containers/oci-seccomp-bpf-hook). The SPO comes with a CRD called `SeccompProfile` where custom seccomp profiles can be managed
-   ~~~sh
+    ~~~sh
     cat <<EOF | kubectl -n ${NAMESPACE} create -f -
+    apiVersion: security-profiles-operator.x-k8s.io/v1beta1
     kind: SeccompProfile
     metadata:
-      namespace: test-seccomp
       name: ls
     spec:
       architectures:
@@ -82,7 +82,7 @@ Another option is using the [Security Profile Operator](https://github.com/kuber
         - umask
         - umount2
         - write
-    EOF  
+    EOF
     ~~~
    
 3. We can configure seccomp profiles at pod or container level, this time we're going to configure it at pod level:
