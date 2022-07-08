@@ -172,30 +172,24 @@ Another option is using the [Security Profile Operator](https://github.com/kuber
     
 ## Demo 2 - Creating custom seccomp profile
 
-1. In order to create the recording using the same OCI hook we mentioned in previous demos with podman we need to include the hook in the crio configuration file as explained [here](https://github.com/kubernetes-sigs/security-profiles-operator/blob/main/installation-usage.md#hook-based-recording). 
-
-> ⚠️ Unfortunately, containerd is not capable of running OCI hooks, yet. 
-
-> ❗ You can create or copy the CRI-O configuration file manually or use for instance MCO if running OpenShift.
-
-2. Apply the recording profile to the application labeled as seccomp-lsl-test.
+1. There are different ways to record the syscalls used by our workload. In our case we will use the logs recorder since it is the less intrusive in my opinion. Then, apply the recording profile to the application labeled as seccomp-lsl-test.
     
     ~~~sh
     cat <<EOF | kubectl -n ${NAMESPACE} create -f -
     apiVersion: security-profiles-operator.x-k8s.io/v1alpha1
     kind: ProfileRecording
     metadata:
-      name: recording-reversewords
+      name: lsl
     spec:
       kind: SeccompProfile
-      recorder: hook
+      recorder: logs
       podSelector:
         matchLabels:
           app: seccomp-lsl-test
     EOF
     ~~~
     
-3. Test
+3. Create the application that will be recorded.
 
     ~~~sh
     cat <<EOF | kubectl -n ${NAMESPACE} create -f -
@@ -215,3 +209,104 @@ Another option is using the [Security Profile Operator](https://github.com/kuber
     status: {}
     EOF
     ~~~
+
+4. Check the new seccomp profile is being recorded. Then delete the pod verify that the profile is created and distributed to all the nodes in the cluster.
+
+    ~~~sh
+    kubectl get profilerecording lsl -o jsonpath='{.status}' | jq
+    ~~~
+    ~~~sh
+    {
+      "activeWorkloads": [
+      "seccomp-lsl-test"
+     ]
+    }
+    ~~~
+    
+    ~~~sh
+    kubectl delete pod seccomp-lsl-test 
+    ~~~
+    ~~~sh
+    pod "seccomp-lsl-test" deleted
+    ~~~
+    ~~~sh
+    kubectl get seccompprofile
+    ~~~
+    ~~~sh
+    NAME                  STATUS      AGE
+    ls                    Installed   23h
+    lsl-seccomp-ls-test   Installed   2m6s
+    ~~~
+    ~~~sh
+    kubectl describe seccompprofile lsl-seccomp-ls-test
+    ~~~
+    ~~~sh
+    Events:
+    Type    Reason                 Age    From             Message
+    ----    ------                 ----   ----             -------
+    Normal  SeccompProfileCreated  5m24s  profilerecorder  seccomp profile created
+    Normal  SavedSeccompProfile    5m23s  profile          Successfully saved profile to disk on fx2-1b.cnf22.cloud.lab.eng.bos.redhat.com
+    Normal  SavedSeccompProfile    5m23s  profile          Successfully saved profile to disk on fx2-3b.cnf22.cloud.lab.eng.bos.redhat.com
+    Normal  SavedSeccompProfile    5m22s  profile          Successfully saved profile to disk on fx2-1c.cloud.lab.eng.bos.redhat.com
+    Normal  SavedSeccompProfile    5m21s  profile          Successfully saved profile to disk on fx2-3c.cnf22.cloud.lab.eng.bos.redhat.com
+    Normal  SavedSeccompProfile    5m19s  profile          Successfully saved profile to disk on fx2-3a.cnf22.cloud.lab.eng.bos.redhat.com
+    Normal  SavedSeccompProfile    5m19s  profile          Successfully saved profile to disk on fx2-3d.cnf22.cloud.lab.eng.bos.redhat.com
+    ~~~
+
+5. You can check diferences between the profiles
+    
+    ~~~sh
+    diff -y <(kubectl get seccompprofiles -o yaml lsl-seccomp-ls-test) <(kubectl get seccompprofiles -o yaml ls)
+    ~~~
+
+6. Finally apply the profile to the lsl pod again
+
+    ~~~sh
+    cat <<EOF | kubectl -n ${NAMESPACE} create -f -
+    apiVersion: v1
+    kind: Pod
+    metadata:
+      name: seccomp-ls-test
+    spec:
+      securityContext:
+        seccompProfile:
+          type: Localhost
+          localhostProfile: operator/test-seccomp/lsl-seccomp-ls-test.json
+      containers:
+      - image: registry.fedoraproject.org/fedora:36
+        name: seccomp-ls-test
+        command: ["ls", "-l", "/"]
+      dnsPolicy: ClusterFirst
+      restartPolicy: Never
+    status: {}
+    EOF
+    ~~~
+
+    ~~~sh
+    kubectl logs seccomp-ls-test 
+    ~~~
+    ~~~sh
+    total 0
+    dr-xr-xr-x.   2 root root   6 Jan 20 03:04 afs
+    lrwxrwxrwx.   1 root root   7 Jan 20 03:04 bin -> usr/bin
+    dr-xr-xr-x.   2 root root   6 Jan 20 03:04 boot
+    drwxr-xr-x.   5 root root 360 Jul  8 10:24 dev
+    drwxr-xr-x.   1 root root  25 Jul  8 10:24 etc
+    drwxr-xr-x.   2 root root   6 Jan 20 03:04 home
+    lrwxrwxrwx.   1 root root   7 Jan 20 03:04 lib -> usr/lib
+    lrwxrwxrwx.   1 root root   9 Jan 20 03:04 lib64 -> usr/lib64
+    drwx------.   2 root root   6 May  6 10:10 lost+found
+    drwxr-xr-x.   2 root root   6 Jan 20 03:04 media
+    drwxr-xr-x.   2 root root   6 Jan 20 03:04 mnt
+    drwxr-xr-x.   2 root root   6 Jan 20 03:04 opt
+    dr-xr-xr-x. 642 root root   0 Jul  8 10:24 proc
+    dr-xr-x---.   2 root root 196 May  6 10:11 root
+    drwxr-xr-x.   1 root root  42 Jul  8 10:24 run
+    lrwxrwxrwx.   1 root root   8 Jan 20 03:04 sbin -> usr/sbin
+    drwxr-xr-x.   2 root root   6 Jan 20 03:04 srv
+    dr-xr-xr-x.  13 root root   0 Jul  8 09:24 sys
+    drwxrwxrwt.   2 root root   6 May  6 10:10 tmp
+    drwxr-xr-x.  12 root root 144 May  6 10:10 usr
+    drwxr-xr-x.  18 root root 235 May  6 10:10 var
+    ~~~
+
