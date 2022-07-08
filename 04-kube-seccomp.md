@@ -144,6 +144,8 @@ Another option is using the [Security Profile Operator](https://github.com/kuber
     kind: Pod
     metadata:
       name: seccomp-lsl-test
+      labels:
+        app: seccomp-lsl-test
     spec:
       securityContext:
         seccompProfile:
@@ -170,4 +172,45 @@ Another option is using the [Security Profile Operator](https://github.com/kuber
     
 ## Demo 2 - Creating custom seccomp profile
 
-1. 
+1. In order to create the recording using the same OCI hook we mentioned in previous demos with podman we need to include the hook in the crio configuration file as explained [here](https://github.com/kubernetes-sigs/security-profiles-operator/blob/main/installation-usage.md#hook-based-recording). 
+> ⚠️ Unfortunately, containerd is not capable of running OCI hooks, yet. 
+> ❗ You can create or copy the CRI-O configuration file manually or use for instance MCO if running OpenShift.
+
+2. Apply the recording profile to the application labeled as seccomp-lsl-test
+
+    ~~~sh
+    cat <<EOF | kubectl -n ${NAMESPACE} create -f -
+    apiVersion: security-profiles-operator.x-k8s.io/v1alpha1
+    kind: ProfileRecording
+    metadata:
+      name: recording-reversewords
+    spec:
+      kind: SeccompProfile
+      recorder: hook
+      podSelector:
+        matchLabels:
+          app: seccomp-lsl-test
+    EOF
+    ~~~ 
+
+3.
+
+    ~~~sh
+    cat <<EOF | kubectl -n ${NAMESPACE} create -f -
+    apiVersion: v1
+    kind: Pod
+    metadata:
+      name: seccomp-lsl-test
+      labels:
+        app: seccomp-lsl-test
+    spec:
+      containers:
+      - image: registry.fedoraproject.org/fedora:36
+        name: seccomp-ls-test
+        command: ["ls","-l", "/"]
+      dnsPolicy: ClusterFirst
+      restartPolicy: Never
+    status: {}
+    EOF
+    ~~~~
+
