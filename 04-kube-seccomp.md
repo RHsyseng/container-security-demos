@@ -212,5 +212,5 @@ Another option is using the [Security Profile Operator](https://github.com/kuber
       restartPolicy: Never
     status: {}
     EOF
-    ~~~~
+    ~~~
 
