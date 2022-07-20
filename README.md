@@ -1,5 +1,5 @@
 # Container Security Demos
-Repository used for various demonstrations done around container security. Mainly about how capabilities and seccomp profiles are applied to Kubernetes/OpenShift
+Repository used for various demos done around container security. Mainly about how capabilities and seccomp profiles are applied to Kubernetes/OpenShift
 
 It has been divided into 4 sections:
 
