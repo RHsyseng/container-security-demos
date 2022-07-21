@@ -1,0 +1,12 @@
+FROM registry.access.redhat.com/ubi8:latest
+ENV GOPATH=/go
+RUN mkdir -p /go
+RUN dnf install golang git -y
+WORKDIR /go/src/github.com/mvazquezc/reverse-words
+RUN git clone https://github.com/mvazquezc/reverse-words . 
+RUN go mod tidy && CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /usr/bin/reverse-words .
+RUN rm -rf /go && dnf clean all
+# Add CAP_NET_BIND capability to our binary
+RUN setcap 'cap_net_bind_service+i' /usr/bin/reverse-words
+EXPOSE 80
+CMD ["/usr/bin/reverse-words"]
