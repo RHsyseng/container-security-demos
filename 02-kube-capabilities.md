@@ -97,7 +97,7 @@
 
 1. In this first deployment we are going to run our app with root uid and drop every runtime capability but NET_BIND_SERVICE.
 
-> :warning: Notice that if you are running OpenShift you will need to add the proper SCCs to the default service account of the namespace. By default OpenShift does not allow to manage capabilities in your deployments. In order to fix that you can for instance run `oc adm policy add-scc-to-user privileged -z default -n $NAMESPACE`. That line allows to use the privileged SCC to the `default` serviceaccount of your namespace.
+> :warning: Notice that if you are running OpenShift you will need to add the proper SCC to the default service account of the namespace. By default OpenShift does not allow to manage capabilities in your deployments. In order to fix that you can for instance run `oc adm policy add-scc-to-user privileged -z default -n $NAMESPACE`. That line allows using the privileged SCC to the `default` serviceaccount in the namespace you are running the app.
 
     ~~~sh
     cat <<EOF | kubectl -n ${NAMESPACE} create -f -
