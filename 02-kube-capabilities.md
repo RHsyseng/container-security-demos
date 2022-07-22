@@ -97,6 +97,8 @@
 
 1. In this first deployment we are going to run our app with root uid and drop every runtime capability but NET_BIND_SERVICE.
 
+> :warning: Notice that if you are running OpenShift you will need to add the proper SCCs to the default service account of the namespace. By default OpenShift does not allow to manage capabilities in your deployments. In order to fix that you can for instance run `oc adm policy add-scc-to-user privileged -z default -n $NAMESPACE`. That line allows to use the privileged SCC to the `default` serviceaccount of your namespace.
+
     ~~~sh
     cat <<EOF | kubectl -n ${NAMESPACE} create -f -
     apiVersion: apps/v1
@@ -250,6 +252,7 @@
 
 > ❗Notice that the same result will occur if we set the file capabilities to inherited and effective or permitted and effective. See [Transformation of capabilities during execve](https://man7.org/linux/man-pages/man7/capabilities.7.html) 
 
+////
 5. Now, lets set the AllowPrivilegeEscalation to false in the securityContext spec of the deployment and check the status:
 
     ~~~sh
