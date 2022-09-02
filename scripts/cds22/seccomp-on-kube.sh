@@ -34,7 +34,7 @@ DEMO_PROMPT="${GREEN}➜ ${CYAN}\W "
 clear
 PROMPT_TIMEOUT=0
 
-pei "# DEMO 1: In this first demo we're going to load the seccomp profile we generated with Podman into our cluster and use it to run a workload. We have two options, manually copying the profile file to the nodes or use the Security Profile Operator. We will do the later."
+pei "# DEMO 1: In this first demo we're going to load the seccomp profile we generated with Podman into our cluster. We have two options, manually copying the profile file to the nodes or use the Security Profile Operator. We will do the later."
 pe "# We have the Security Protile Operator already deployed ⏎"
 pei "kubectl -n security-profiles-operator get pods"
 pei "# Next, let's create the namespace for the workload"
@@ -107,62 +107,10 @@ spec:
     - write
 EOF
 "
-TYPE_SPEED=50
-pe "# Now that we have the profile, we can create the workload. We can assign the profile to a specific container or at pod level, for this time we're configuring it at pod level ⏎"
- 
-TYPE_SPEED=100
-pei "
-cat <<EOF | kubectl -n test-seccomp create -f -
-apiVersion: v1
-kind: Pod
-metadata:
-  name: seccomp-ls-test
-spec:
-  securityContext:
-    seccompProfile:
-      type: Localhost
-      localhostProfile: operator/test-seccomp/ls.json
-  containers:
-  - image: registry.fedoraproject.org/fedora:36
-    name: seccomp-ls-test
-    command: [\"ls\", \"/\"]
-  dnsPolicy: ClusterFirst
-  restartPolicy: Never
-status: {}
-EOF
-"
-TYPE_SPEED=50
-pe "# If we check the pod logs, we can see it worked ⏎"
-pei "kubectl -n test-seccomp logs seccomp-ls-test"
-pe "# Now let's see what happens if we modify the command to do an ls -l ⏎"
-TYPE_SPEED=100
-pei "
-cat <<EOF | kubectl -n test-seccomp create -f -
-apiVersion: v1
-kind: Pod
-metadata:
-  name: seccomp-lsl-test
-  labels:
-    app: seccomp-lsl-test
-spec:
-  securityContext:
-    seccompProfile:
-      type: Localhost
-      localhostProfile: operator/test-seccomp/ls.json
-  containers:
-  - image: registry.fedoraproject.org/fedora:36
-    name: seccomp-ls-test
-    command: [\"ls\",\"-l\", \"/\"]
-  dnsPolicy: ClusterFirst
-  restartPolicy: Never
-status: {}
-EOF
-"
-TYPE_SPEED=50
-pe "# This time the execution failed since the profile doesn't have the required syscalls for the command to work allowed ⏎"
-pei "kubectl -n test-seccomp logs seccomp-lsl-test"
 sleep 2
-clear
+TYPE_SPEED=50
+pe "# We can see the profile installed, at this point it will be available for us to use ⏎"
+pei "kubectl -n test-seccomp get seccompprofile"
 pei "# DEMO 2: In this demo we will show how the Security Profile Operator can be used to record a workload and produce a profile that can be consumed"
 pe "# Let's create a ProfileRecording targetting workloads labeled with app=seccomp-lsl-recording ⏎"
 pei "
@@ -205,9 +153,7 @@ pei "kubectl -n test-seccomp delete pod seccomp-lsl-recording"
 pei "kubectl -n test-seccomp delete ProfileRecording lsl"
 pe "# We should have a new profile installed ⏎"
 pei "kubectl -n test-seccomp get seccompprofile"
-pe "# We can compare both to see the differences (left: new profile, right: old profile) ⏎"
-pei "diff -y <(kubectl -n test-seccomp get seccompprofiles lsl-seccomp-ls-recording -o jsonpath='{.spec.syscalls[0].names}' | tr -d \"[\" | tr -d \"]\" | tr \",\" \"\n\" | sort) <(kubectl -n test-seccomp get seccompprofiles ls -o jsonpath='{.spec.syscalls[0].names}' | tr -d \"[\" | tr -d \"]\" | tr \",\" \"\n\" | sort)"
-pe "# Now that we have a profile for running ls -l, let's create the pod again ⏎"
+pe "# Now that we have a profile for running ls -l, let's create the pod ⏎"
 pei "
 cat <<EOF | kubectl -n test-seccomp create -f -
 apiVersion: v1
@@ -228,6 +174,6 @@ spec:
 status: {}
 EOF
 "
-pe "# If we check the logs we should have the correct output now ⏎"
+pe "# If we check the logs we should have the ls -l output ⏎"
 pei "kubectl -n test-seccomp logs seccomp-lsl-test-2"
 pei "# Demo finished!"
